@@ -32,7 +32,7 @@ import (
 
 const testFileCount = 10000
 const testDirName = "findlargedir"
-const fileThreshold = 100000
+const fileThreshold = 50000
 
 func main() {
 	if len(os.Args) < 2 {
@@ -42,37 +42,37 @@ func main() {
 	log.Printf("Note: program will attempt to alert on directories larger than %v entries by default.", fileThreshold)
 
 	dirs := os.Args[1:]
-	var count int64
 
 	for i := range dirs {
-		ratio := getInodeRatio(dirs[i])
-		count = 0
+		var offenderTotal, countFromStat int64
 
-		godirwalk.Walk(dirs[i], &godirwalk.Options{
-			Unsorted:            true,
-			FollowSymbolicLinks: false,
-			Callback: func(osPathname string, de *godirwalk.Dirent) error {
-				if de.IsDir() {
-					fi, err := os.Stat(osPathname)
-					if err != nil {
-						return err
-					}
+		if ratio := getInodeRatio(dirs[i]); ratio > 0 {
+			godirwalk.Walk(dirs[i], &godirwalk.Options{
+				Unsorted:            true,
+				FollowSymbolicLinks: false,
+				Callback: func(osPathname string, de *godirwalk.Dirent) error {
+					if de.IsDir() {
+						fi, err := os.Stat(osPathname)
+						if err != nil {
+							return err
+						}
 
-					assumedCount := int64(fi.Size() / ratio)
-					if assumedCount > int64(fileThreshold) {
-						log.Printf("Directory %q is possibly a large directory with %v entries.", osPathname,
-							humanPrint(assumedCount))
-						count++
-						return fmt.Errorf("directory %q is too large to process", osPathname)
+						countFromStat = int64(fi.Size() / ratio)
+						if countFromStat > int64(fileThreshold) {
+							log.Printf("Directory %q is possibly a large directory with %v entries.", osPathname,
+								humanPrint(countFromStat))
+							offenderTotal++
+							return fmt.Errorf("directory %q is too large to process", osPathname)
+						}
 					}
-				}
-				return nil
-			},
-			ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
-				return godirwalk.SkipNode
-			},
-		})
-		log.Printf("Found %v large directories in %q.", count, dirs[i])
+					return nil
+				},
+				ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
+					return godirwalk.SkipNode
+				},
+			})
+		}
+		log.Printf("Found %v large directories in %q.", offenderTotal, dirs[i])
 	}
 }
 
