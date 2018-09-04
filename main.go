@@ -36,7 +36,7 @@ const defaultAlertThreshold = 50000
 const defaultTestFileCount = 10000
 
 var alertThreshold, testFileCount *int64
-var helpFlag *bool
+var helpFlag, accurateFlag *bool
 
 func init() {
 	alertThreshold = getopt.Int64Long("threshold", 't', defaultAlertThreshold,
@@ -44,23 +44,20 @@ func init() {
 	testFileCount = getopt.Int64Long("testcount", 'c', defaultTestFileCount,
 		fmt.Sprintf("set initial file count for inode size testing phase (default %v)", defaultTestFileCount))
 	helpFlag = getopt.BoolLong("help", 'h', "display help")
+	accurateFlag = getopt.BoolLong("accurate", 'a', "full accuracy when checking large directories")
 }
 
 func main() {
 	getopt.Parse()
+	args := getopt.Args()
 
-	if *helpFlag {
+	if *helpFlag || len(args) < 1 {
 		getopt.PrintUsage(os.Stderr)
 		os.Exit(0)
 	}
 
-	args := getopt.Args()
-
-	if len(args) < 1 {
-		log.Fatal("Usage: specify one or more directories to scan for large subdirectories. Make sure you have r/w permissions.")
-	}
-
-	log.Printf("Note: program will attempt to alert on directories larger than %v entries by default.", *alertThreshold)
+	log.Printf("Note: program will attempt to alert on directories larger than %v entries. Make sure you have r/w privileges.",
+		*alertThreshold)
 
 	for i := range args {
 		var offenderTotal, countFromStat int64
@@ -81,6 +78,17 @@ func main() {
 							log.Printf("Directory %q is possibly a large directory with %v entries.", osPathname,
 								humanPrint(countFromStat))
 							offenderTotal++
+
+							if *accurateFlag {
+								log.Printf("Calculating %q directory exact entry count. Please wait...",
+									osPathname)
+								deChildren, err := godirwalk.ReadDirents(osPathname, nil)
+								if err != nil {
+									log.Print(err)
+								}
+								log.Printf("Done. Directory %q has exactly %v entries.", osPathname,
+									len(deChildren))
+							}
 							return fmt.Errorf("directory %q is too large to process", osPathname)
 						}
 					}
