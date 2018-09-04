@@ -22,12 +22,15 @@
 package main
 
 import (
+	"golang.org/x/sync/errgroup"
 	"io/ioutil"
 	"log"
 	"os"
 )
 
 const testContent = "Death is lighter than a feather, but Duty is heavier than a mountain."
+
+var g errgroup.Group
 
 func getInodeRatio(checkDir string) (ratio float64) {
 	defer func() {
@@ -55,21 +58,30 @@ func getInodeRatio(checkDir string) (ratio float64) {
 
 	content := []byte(testContent)
 	for i := int64(0); i < *testFileCount; i++ {
-		t, err := ioutil.TempFile(tempDir, "")
-		if err != nil {
-			log.Print(err)
-			return
-		}
+		g.Go(func() error {
+			t, err := ioutil.TempFile(tempDir, "")
+			if err != nil {
+				log.Print(err)
+				return err
+			}
 
-		if _, err := t.Write(content); err != nil {
-			log.Print(err)
-			return
-		}
+			if _, err := t.Write(content); err != nil {
+				log.Print(err)
+				return err
+			}
 
-		if err := t.Close(); err != nil {
-			log.Print(err)
-			return
-		}
+			if err := t.Close(); err != nil {
+				log.Print(err)
+				return err
+			}
+
+			return nil
+		})
+	}
+
+	if err = g.Wait(); err != nil {
+		log.Print(err)
+		return
 	}
 
 	fiFull, err := os.Stat(tempDir)

@@ -23,12 +23,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/karrick/godirwalk"
+	"github.com/pborman/getopt/v2"
 	"log"
 	"math"
 	"os"
-
-	"github.com/karrick/godirwalk"
-	"github.com/pborman/getopt/v2"
 )
 
 const testDirName = "findlargedir"

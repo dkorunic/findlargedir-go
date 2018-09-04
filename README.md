@@ -13,7 +13,7 @@ Program will **not follow symlinks** and **requires r/w permissions** to be able
 
 ## Caveats
 
-* requires r/w privileges for an each filesystem being tested, it will also create a temporary directory with a lot of temporary files which cleaned up afterwards
+* requires r/w privileges for an each filesystem being tested, it will also create a temporary directory with a lot of temporary files which are cleaned up afterwards
 * does not work on FreeBSD 7.x and EMC Isilon 7.1 due to kernel stat structure incompatibilities with a recent FreeBSD kernel structure mapped in Golang syscall *Stat_t
 * accurate mode (`-a`) can cause an excessive I/O and an excessive memory use; only use when appropriate
 
