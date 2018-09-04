@@ -29,7 +29,7 @@ import (
 
 const testContent = "Death is lighter than a feather, but Duty is heavier than a mountain."
 
-func getInodeRatio(checkDir string) (ratio int64) {
+func getInodeRatio(checkDir string) (ratio float64) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Errors encountered, skipping directory scan on %q.", checkDir)
@@ -37,7 +37,8 @@ func getInodeRatio(checkDir string) (ratio int64) {
 		}
 	}()
 
-	log.Printf("Determining inode to file count ratio on %q.", checkDir)
+	log.Printf("Determining inode to file count ratio on %q. Please wait, creating %v files...", checkDir,
+		*testFileCount)
 
 	tempDir, err := ioutil.TempDir(checkDir, testDirName)
 	if err != nil {
@@ -53,7 +54,7 @@ func getInodeRatio(checkDir string) (ratio int64) {
 	}
 
 	content := []byte(testContent)
-	for i := 0; i < testFileCount; i++ {
+	for i := int64(0); i < *testFileCount; i++ {
 		t, err := ioutil.TempFile(tempDir, "")
 		if err != nil {
 			log.Print(err)
@@ -77,7 +78,7 @@ func getInodeRatio(checkDir string) (ratio int64) {
 		return
 	}
 
-	ratio = (fiFull.Size() - fiEmpty.Size()) / int64(testFileCount)
-	log.Printf("Approximate directory inode size to file count ratio on %q is ~%v.", checkDir, ratio)
+	ratio = float64(fiFull.Size()-fiEmpty.Size()) / float64(*testFileCount)
+	log.Printf("Done. Approximate directory inode size to file count ratio on %q is %v.", checkDir, ratio)
 	return
 }

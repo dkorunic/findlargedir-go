@@ -28,26 +28,45 @@ import (
 	"os"
 
 	"github.com/karrick/godirwalk"
+	"github.com/pborman/getopt/v2"
 )
 
-const testFileCount = 10000
 const testDirName = "findlargedir"
-const fileThreshold = 50000
+const defaultAlertThreshold = 50000
+const defaultTestFileCount = 10000
+
+var alertThreshold, testFileCount *int64
+var helpFlag *bool
+
+func init() {
+	alertThreshold = getopt.Int64Long("threshold", 't', defaultAlertThreshold,
+		fmt.Sprintf("set file count threshold for alerting (default %v)", defaultAlertThreshold))
+	testFileCount = getopt.Int64Long("testcount", 'c', defaultTestFileCount,
+		fmt.Sprintf("set initial file count for inode size testing phase (default %v)", defaultTestFileCount))
+	helpFlag = getopt.BoolLong("help", 'h', "display help")
+}
 
 func main() {
-	if len(os.Args) < 2 {
+	getopt.Parse()
+
+	if *helpFlag {
+		getopt.PrintUsage(os.Stderr)
+		os.Exit(0)
+	}
+
+	args := getopt.Args()
+
+	if len(args) < 1 {
 		log.Fatal("Usage: specify one or more directories to scan for large subdirectories. Make sure you have r/w permissions.")
 	}
 
-	log.Printf("Note: program will attempt to alert on directories larger than %v entries by default.", fileThreshold)
+	log.Printf("Note: program will attempt to alert on directories larger than %v entries by default.", *alertThreshold)
 
-	dirs := os.Args[1:]
-
-	for i := range dirs {
+	for i := range args {
 		var offenderTotal, countFromStat int64
 
-		if ratio := getInodeRatio(dirs[i]); ratio > 0 {
-			godirwalk.Walk(dirs[i], &godirwalk.Options{
+		if ratio := getInodeRatio(args[i]); ratio > 0 {
+			godirwalk.Walk(args[i], &godirwalk.Options{
 				Unsorted:            true,
 				FollowSymbolicLinks: false,
 				Callback: func(osPathname string, de *godirwalk.Dirent) error {
@@ -57,8 +76,8 @@ func main() {
 							return err
 						}
 
-						countFromStat = int64(fi.Size() / ratio)
-						if countFromStat > int64(fileThreshold) {
+						countFromStat = int64(float64(fi.Size()) / ratio)
+						if countFromStat >= int64(*alertThreshold) {
 							log.Printf("Directory %q is possibly a large directory with %v entries.", osPathname,
 								humanPrint(countFromStat))
 							offenderTotal++
@@ -72,7 +91,7 @@ func main() {
 				},
 			})
 		}
-		log.Printf("Found %v large directories in %q.", offenderTotal, dirs[i])
+		log.Printf("Found %v large directories in %q.", offenderTotal, args[i])
 	}
 }
 
