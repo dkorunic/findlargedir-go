@@ -5,6 +5,7 @@ builds:
     - linux
     - darwin
     - windows
+    - freebsd
   goarch:
     - 386
     - amd64
@@ -12,9 +13,10 @@ builds:
     - arm64
 archive:
   replacements:
-    darwin: Darwin
     linux: Linux
+    darwin: Darwin
     windows: Windows
+    freebsd: FreeBSD
     386: i386
     amd64: x86_64
 checksum:
