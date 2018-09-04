@@ -34,7 +34,7 @@ import (
 
 const testDirName = "findlargedir"
 const defaultAlertThreshold = 50000
-const defaultTestFileCount = 10000
+const defaultTestFileCount = 20000
 const defaultProgressTicker = time.Minute * 5
 
 var alertThreshold, testFileCount *int64
