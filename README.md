@@ -36,17 +36,20 @@ go get https://github.com/dkorunic/findlargedir
 Usage:
 
 ```shell
-Usage: findlargedir [-ah] [-c value] [-t value] [parameters ...]
+Usage: findlargedir [-ahp] [-c value] [-t value] [parameters ...]
  -a, --accurate  full accuracy when checking large directories
  -c, --testcount=value
                  set initial file count for inode size testing phase (default
                  10000)
  -h, --help      display help
+ -p, --progress  display progress status every 5 minutes
  -t, --threshold=value
                  set file count threshold for alerting (default 50000)
 ```
 
-When using **accurate mode** (`-a` parameter) beware that large directory lookups will stall the process completely for extended periods of time.
+When using **accurate mode** (`-a` parameter) beware that large directory lookups will stall the process completely for extended periods of time. 
+
+When unsure of the program progress feel free to send SIGUSR1 or SIGUSR2 process signals to see the last processed path or use **progress** flag (`-p` parameter) do see continous 5-minute status updates.
 
 Typical use case to find possible offenders on several filesystems:
 

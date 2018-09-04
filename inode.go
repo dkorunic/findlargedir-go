@@ -32,6 +32,7 @@ const testContent = "Death is lighter than a feather, but Duty is heavier than a
 
 var g errgroup.Group
 
+// getInodeRatio will do a rough estimation on how much a single file occupies in a directory inode
 func getInodeRatio(checkDir string) (ratio float64) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -43,6 +44,7 @@ func getInodeRatio(checkDir string) (ratio float64) {
 	log.Printf("Determining inode to file count ratio on %q. Please wait, creating %v files...", checkDir,
 		*testFileCount)
 
+	// Create a temporary directory in each root filesystem path and remove on exit
 	tempDir, err := ioutil.TempDir(checkDir, testDirName)
 	if err != nil {
 		log.Print(err)
@@ -50,12 +52,14 @@ func getInodeRatio(checkDir string) (ratio float64) {
 	}
 	defer os.RemoveAll(tempDir)
 
+	// Get empty directory inode size
 	fiEmpty, err := os.Stat(tempDir)
 	if err != nil {
 		log.Print(err)
 		return
 	}
 
+	// Highly concurrent file creation routine, preferably with sane GOMAXPROCS = numcpus
 	content := []byte(testContent)
 	for i := int64(0); i < *testFileCount; i++ {
 		g.Go(func() error {
@@ -79,17 +83,20 @@ func getInodeRatio(checkDir string) (ratio float64) {
 		})
 	}
 
+	// Wait for all routines to finish
 	if err = g.Wait(); err != nil {
 		log.Print(err)
 		return
 	}
 
+	// Get full directory inode size
 	fiFull, err := os.Stat(tempDir)
 	if err != nil {
 		log.Print(err)
 		return
 	}
 
+	// Calculate final file inode usage ratio
 	ratio = float64(fiFull.Size()-fiEmpty.Size()) / float64(*testFileCount)
 	log.Printf("Done. Approximate directory inode size to file count ratio on %q is %v.", checkDir, ratio)
 	return

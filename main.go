@@ -28,14 +28,19 @@ import (
 	"log"
 	"math"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
 )
 
 const testDirName = "findlargedir"
 const defaultAlertThreshold = 50000
 const defaultTestFileCount = 10000
+const defaultProgressTicker = time.Minute * 5
 
 var alertThreshold, testFileCount *int64
-var helpFlag, accurateFlag *bool
+var helpFlag, accurateFlag, progressFlag *bool
 
 func init() {
 	alertThreshold = getopt.Int64Long("threshold", 't', defaultAlertThreshold,
@@ -44,6 +49,7 @@ func init() {
 		fmt.Sprintf("set initial file count for inode size testing phase (default %v)", defaultTestFileCount))
 	helpFlag = getopt.BoolLong("help", 'h', "display help")
 	accurateFlag = getopt.BoolLong("accurate", 'a', "full accuracy when checking large directories")
+	progressFlag = getopt.BoolLong("progress", 'p', "display progress status every 5 minutes")
 }
 
 func main() {
@@ -55,54 +61,126 @@ func main() {
 		os.Exit(0)
 	}
 
-	log.Printf("Note: program will attempt to alert on directories larger than %v entries. Make sure you have r/w privileges.",
+	log.Printf("Note: program will attempt to identify directories larger than %v entries. Make sure you have r/w privileges.",
 		*alertThreshold)
 
 	for i := range args {
-		var offenderTotal, countFromStat int64
-
-		if ratio := getInodeRatio(args[i]); ratio > 0 {
-			godirwalk.Walk(args[i], &godirwalk.Options{
-				Unsorted:            true,
-				FollowSymbolicLinks: false,
-				Callback: func(osPathname string, de *godirwalk.Dirent) error {
-					if de.IsDir() {
-						fi, err := os.Stat(osPathname)
-						if err != nil {
-							return err
-						}
-
-						countFromStat = int64(float64(fi.Size()) / ratio)
-						if countFromStat >= int64(*alertThreshold) {
-							log.Printf("Directory %q is possibly a large directory with %v entries.", osPathname,
-								humanPrint(countFromStat))
-							offenderTotal++
-
-							if *accurateFlag {
-								log.Printf("Calculating %q directory exact entry count. Please wait...",
-									osPathname)
-								deChildren, err := godirwalk.ReadDirents(osPathname, nil)
-								if err != nil {
-									log.Print(err)
-									return err
-								}
-								log.Printf("Done. Directory %q has exactly %v entries.", osPathname,
-									len(deChildren))
-							}
-							return fmt.Errorf("directory %q is too large to process", osPathname)
-						}
-					}
-					return nil
-				},
-				ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
-					return godirwalk.SkipNode
-				},
-			})
-		}
-		log.Printf("Found %v large directories in %q.", offenderTotal, args[i])
+		processDirectory(args[i])
 	}
 }
 
+// processDirectory will process individual root filesystem/folder path and identify blackhole directory offenders
+func processDirectory(processPath string) {
+	// Establish file to direcory inode ratio
+	ratio := getInodeRatio(processPath)
+	if ratio <= 0 {
+		log.Printf("Unable to calculate inode to file count ratio on %q. Skipping.", processPath)
+		return
+	}
+
+	var wg sync.WaitGroup
+
+	var ticker *time.Ticker
+	var lastPathname *string
+	doneTickerChan := make(chan struct{}, 1)
+	defer close(doneTickerChan)
+
+	// Default 5-minute progress update if progressFlag is true
+	if *progressFlag {
+		ticker = time.NewTicker(defaultProgressTicker)
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			select {
+			case <-ticker.C:
+				printPath(lastPathname)
+			case <-doneTickerChan:
+				ticker.Stop()
+				return
+			}
+		}()
+	}
+
+	signalChan := make(chan os.Signal, 1)
+	doneSignalChan := make(chan struct{}, 1)
+	defer close(doneSignalChan)
+
+	// Default SIGUSR1 and SIGUSR2 handler which will display progress update
+	signal.Notify(signalChan, syscall.SIGUSR1, syscall.SIGUSR2)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		for {
+			select {
+			case <-signalChan:
+				printPath(lastPathname)
+			case <-doneSignalChan:
+				return
+			}
+		}
+	}()
+
+	var offenderTotal, countFromStat int64
+
+	// Fast concurrent directory walker: won't follow symlinks and won't sort entries
+	godirwalk.Walk(processPath, &godirwalk.Options{
+		Unsorted:            true,
+		FollowSymbolicLinks: false,
+		// Default callback will process only directory entries
+		Callback: func(osPathname string, de *godirwalk.Dirent) error {
+			if de.IsDir() {
+				// Process only if entry is directory
+				lastPathname = &osPathname
+				fi, err := os.Stat(osPathname)
+				if err != nil {
+					return err
+				}
+
+				countFromStat = int64(float64(fi.Size()) / ratio)
+				if countFromStat >= int64(*alertThreshold) {
+					log.Printf("Directory %q is possibly a large directory with %v entries.", osPathname,
+						humanPrint(countFromStat))
+					offenderTotal++
+
+					// If necessary deep-dive the directory and get accurate file count
+					if *accurateFlag {
+						log.Printf("Calculating %q directory exact entry count. Please wait...",
+							osPathname)
+
+						deChildren, err := godirwalk.ReadDirents(osPathname, nil)
+						if err != nil {
+							log.Print(err)
+							return err
+						}
+
+						log.Printf("Done. Directory %q has exactly %v entries.", osPathname,
+							len(deChildren))
+					}
+					return fmt.Errorf("directory %q is too large to process", osPathname)
+				}
+			}
+			return nil
+		},
+		// Default error callback will just skip over when encountering errors
+		ErrorCallback: func(osPathname string, err error) godirwalk.ErrorAction {
+			return godirwalk.SkipNode
+		},
+	})
+
+	// Close channels and cleanup routines
+	if *progressFlag {
+		doneTickerChan <- struct{}{}
+	}
+	doneSignalChan <- struct{}{}
+	wg.Wait()
+
+	log.Printf("Found %v large directories in %q.", offenderTotal, processPath)
+}
+
+// humanPrint will display base10 approximate file count
 func humanPrint(input int64) string {
 	exp := math.Round(math.Log(float64(input)) / math.Log(float64(10)))
 
@@ -126,4 +204,11 @@ func humanPrint(input int64) string {
 	}
 
 	return "<1k"
+}
+
+// printPath will display path processing progress
+func printPath(processPath *string) {
+	if processPath != nil && *processPath != "" {
+		log.Printf("Last processed path was: %q.", *processPath)
+	}
 }
