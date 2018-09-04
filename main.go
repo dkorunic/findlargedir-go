@@ -85,6 +85,7 @@ func main() {
 								deChildren, err := godirwalk.ReadDirents(osPathname, nil)
 								if err != nil {
 									log.Print(err)
+									return err
 								}
 								log.Printf("Done. Directory %q has exactly %v entries.", osPathname,
 									len(deChildren))

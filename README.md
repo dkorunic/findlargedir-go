@@ -11,6 +11,12 @@ Findlargedir is a quick hack intended to help identifying "black hole" directori
 
 Program will **not follow symlinks** and **requires r/w permissions** to be able to calculate a directory inode size to number of entries ratio and estimate a number of entries in a directory without actually counting them. While this method is just an approximation of the actual numbner of entries in a directory, it is good enough to quickly scan for offending directories.
 
+## Caveats
+
+* requires r/w privileges for an each filesystem being tested, it will also create a temporary directory with a lot of temporary files which cleaned up afterwards
+* does not work on FreeBSD 7.x and EMC Isilon 7.1 due to kernel stat structure incompatibilities with a recent FreeBSD kernel structure mapped in Golang syscall *Stat_t
+* accurate mode (`-a`) can cause an excessive I/O and an excessive memory use; only use when appropriate
+
 ## Installation
 
 There are two ways of installing findlargedir:
