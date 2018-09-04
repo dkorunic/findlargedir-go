@@ -26,8 +26,28 @@ go get https://github.com/dkorunic/findlargedir
 
 ## Usage
 
+Usage:
+
+```shell
+Usage: findlargedir [-h] [-c value] [-t value] [parameters ...]
+ -c, --testcount=value
+             set initial file count for inode size testing phase (default
+             10000)
+ -h, --help  display help
+ -t, --threshold=value
+             set file count threshold for alerting (default 50000)
+```
+
 Typical example:
 
 ```shell
-findlargedir /var/tmp /tmp /home
+root@box:~# findlargedir -c 10000 -t 50000 /var /home
+2018/09/04 07:33:48 Note: program will attempt to alert on directories larger than 50000 entries by default.
+2018/09/04 07:33:48 Determining inode to file count ratio on "/var". Please wait, creating 10000 files...
+2018/09/04 07:33:48 Approximate directory inode size to file count ratio on "/var" is ~26.624.
+2018/09/04 07:34:09 Found 0 large directories in "/var".
+2018/09/04 07:34:09 Determining inode to file count ratio on "/home". Please wait, creating 10000 files...
+2018/09/04 07:34:09 Approximate directory inode size to file count ratio on "/home" is ~27.8528.
+2018/09/04 07:34:10 Directory "/home/user/torrent" is possibly a large directory with ~100k entries.
+2018/09/04 07:34:10 Found 1 large directories in "/home".
 ```
