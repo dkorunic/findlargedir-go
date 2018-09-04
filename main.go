@@ -28,9 +28,7 @@ import (
 	"log"
 	"math"
 	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 )
 
@@ -108,7 +106,7 @@ func processDirectory(processPath string) {
 	defer close(doneSignalChan)
 
 	// Default SIGUSR1 and SIGUSR2 handler which will display progress update
-	signal.Notify(signalChan, syscall.SIGUSR1, syscall.SIGUSR2)
+	registerStatusSignal(signalChan)
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
