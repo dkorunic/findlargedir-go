@@ -27,9 +27,9 @@
 package cerrgroup_test
 
 import (
-	"dkorunic.net/findlargedir/cerrgroup"
 	"errors"
 	"fmt"
+	"github.com/dkorunic/findlargedir/cerrgroup"
 	"net/http"
 	"os"
 	"runtime"

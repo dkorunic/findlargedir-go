@@ -27,8 +27,8 @@ import (
 	"os"
 	"runtime"
 
-	"dkorunic.net/findlargedir/cerrgroup"
-	"dkorunic.net/findlargedir/isilonstat"
+	"github.com/dkorunic/findlargedir/cerrgroup"
+	"github.com/dkorunic/findlargedir/isilonstat"
 )
 
 const testContent = "Death is lighter than a feather, but Duty is heavier than a mountain."
