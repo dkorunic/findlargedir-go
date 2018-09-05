@@ -38,7 +38,7 @@ const defaultTestFileCount = 20000
 const defaultProgressTicker = time.Minute * 5
 
 var alertThreshold, testFileCount *int64
-var helpFlag, accurateFlag, progressFlag *bool
+var helpFlag, accurateFlag, progressFlag, isilonFlag *bool
 
 func init() {
 	alertThreshold = getopt.Int64Long("threshold", 't', defaultAlertThreshold,
@@ -48,6 +48,7 @@ func init() {
 	helpFlag = getopt.BoolLong("help", 'h', "display help")
 	accurateFlag = getopt.BoolLong("accurate", 'a', "full accuracy when checking large directories")
 	progressFlag = getopt.BoolLong("progress", 'p', "display progress status every 5 minutes")
+	isilonFlag = getopt.BoolLong("isilon", '7', "enable support for EMC Isilon OneFS 7.x")
 }
 
 func main() {

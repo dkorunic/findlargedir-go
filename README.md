@@ -16,6 +16,7 @@ Program will **not follow symlinks** and **requires r/w permissions** to be able
 * requires r/w privileges for an each filesystem being tested, it will also create a temporary directory with a lot of temporary files which are cleaned up afterwards
 * does not work on FreeBSD 7.x and EMC Isilon 7.1 due to kernel stat structure incompatibilities with a recent FreeBSD kernel structure mapped in Golang syscall *Stat_t
 * accurate mode (`-a`) can cause an excessive I/O and an excessive memory use; only use when appropriate
+* on EMC Isilon OneFS >= 7.1 and < 8.0 it needs isilon mode (`-7` parameter) due to differences in OneFS kernel stat structure
 
 ## Installation
 
@@ -36,11 +37,12 @@ go get https://github.com/dkorunic/findlargedir
 Usage:
 
 ```shell
-Usage: findlargedir [-ahp] [-c value] [-t value] [parameters ...]
+Usage: findlargedir [-7ahp] [-c value] [-t value] [parameters ...]
+ -7, --isilon    enable support for EMC Isilon OneFS 7.x
  -a, --accurate  full accuracy when checking large directories
  -c, --testcount=value
                  set initial file count for inode size testing phase (default
-                 10000)
+                 20000)
  -h, --help      display help
  -p, --progress  display progress status every 5 minutes
  -t, --threshold=value
@@ -50,6 +52,8 @@ Usage: findlargedir [-ahp] [-c value] [-t value] [parameters ...]
 When using **accurate mode** (`-a` parameter) beware that large directory lookups will stall the process completely for extended periods of time. 
 
 When unsure of the program progress feel free to send SIGUSR1 or SIGUSR2 process signals to see the last processed path or use **progress** flag (`-p` parameter) do see continous 5-minute status updates.
+
+If you are trying to run it on **EMC Isilon OneFS** >= 7.1 and < 8.0 (based on FreeBSD 7.4), make sure to add `-7` parameter otherwise program will detect invalid st_size and skip all filesystems.
 
 Typical use case to find possible offenders on several filesystems:
 

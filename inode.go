@@ -28,6 +28,7 @@ import (
 	"runtime"
 
 	"dkorunic.net/findlargedir/cerrgroup"
+	"dkorunic.net/findlargedir/isilonstat"
 )
 
 const testContent = "Death is lighter than a feather, but Duty is heavier than a mountain."
@@ -55,7 +56,7 @@ func getInodeRatio(checkDir string) (ratio float64) {
 	defer os.RemoveAll(tempDir)
 
 	// Get empty directory inode size
-	fiEmpty, err := os.Stat(tempDir)
+	dirSizeEmpty, err := getDirSize(tempDir)
 	if err != nil {
 		log.Print(err)
 		return
@@ -93,21 +94,21 @@ func getInodeRatio(checkDir string) (ratio float64) {
 	}
 
 	// Get full directory inode size
-	fiFull, err := os.Stat(tempDir)
+	dirSizeFull, err := getDirSize(tempDir)
 	if err != nil {
 		log.Print(err)
 		return
 	}
 
 	// Stat st_size value sanity check
-	if fiFull.Size() < (minRatio**testFileCount) || fiFull.Size() > (maxRatio**testFileCount) {
+	if dirSizeFull < (minRatio**testFileCount) || dirSizeFull > (maxRatio**testFileCount) {
 		log.Printf("Directory stat st_size structure is most likely incorrect (%v bytes used). Skipping folder checks.",
-			fiFull.Size())
+			dirSizeFull)
 		return
 	}
 
 	// Calculate final file inode usage ratio
-	ratio = float64(fiFull.Size()-fiEmpty.Size()) / float64(*testFileCount)
+	ratio = float64(dirSizeFull-dirSizeEmpty) / float64(*testFileCount)
 
 	// Ratio sanity check
 	if ratio < minRatio || ratio > maxRatio {
@@ -118,4 +119,15 @@ func getInodeRatio(checkDir string) (ratio float64) {
 
 	log.Printf("Done. Approximate directory inode size to file count ratio on %q is %v.", checkDir, ratio)
 	return
+}
+
+// getDirSize returns inode size from Fileinfo structure
+func getDirSize(name string) (int64, error) {
+	if *isilonFlag {
+		fi, err := isilonstat.Stat(name)
+		return fi.Size(), err
+	}
+
+	fi, err := os.Stat(name)
+	return fi.Size(), err
 }
