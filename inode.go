@@ -31,6 +31,8 @@ import (
 )
 
 const testContent = "Death is lighter than a feather, but Duty is heavier than a mountain."
+const minRatio = 1
+const maxRatio = 128
 
 // getInodeRatio will do a rough estimation on how much a single file occupies in a directory inode
 func getInodeRatio(checkDir string) (ratio float64) {
@@ -97,8 +99,23 @@ func getInodeRatio(checkDir string) (ratio float64) {
 		return
 	}
 
+	// Stat st_size value sanity check
+	if fiFull.Size() < (minRatio**testFileCount) || fiFull.Size() > (maxRatio**testFileCount) {
+		log.Printf("Directory stat st_size structure is most likely incorrect (%v bytes used). Skipping folder checks.",
+			fiFull.Size())
+		return
+	}
+
 	// Calculate final file inode usage ratio
 	ratio = float64(fiFull.Size()-fiEmpty.Size()) / float64(*testFileCount)
+
+	// Ratio sanity check
+	if ratio < minRatio || ratio > maxRatio {
+		log.Printf("Calculated ratio (%v) failed sanity checking. Skipping folder checks.", ratio)
+		ratio = 0
+		return
+	}
+
 	log.Printf("Done. Approximate directory inode size to file count ratio on %q is %v.", checkDir, ratio)
 	return
 }
