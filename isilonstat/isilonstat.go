@@ -19,7 +19,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// +build !windows,!arm64
+// +build freebsd,amd64
 
 // Package isilonstat provides Isilon OneFS 7.1-compatible stat(). This is a
 // fairly naive and incomplete implementation. It might crash and malfunction in
