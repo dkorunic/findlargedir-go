@@ -22,17 +22,15 @@
 package main
 
 import (
-	"dkorunic.net/findlargedir/cerrgroup"
-	"golang.org/x/sync/errgroup"
 	"io/ioutil"
 	"log"
 	"os"
 	"runtime"
+
+	"dkorunic.net/findlargedir/cerrgroup"
 )
 
 const testContent = "Death is lighter than a feather, but Duty is heavier than a mountain."
-
-var g errgroup.Group
 
 // getInodeRatio will do a rough estimation on how much a single file occupies in a directory inode
 func getInodeRatio(checkDir string) (ratio float64) {
@@ -61,8 +59,8 @@ func getInodeRatio(checkDir string) (ratio float64) {
 		return
 	}
 
-	// Highly concurrent file creation routine, preferably with sane GOMAXPROCS = numcpus
-	cg := cerrgroup.New(runtime.NumCPU() * 2)
+	// Highly concurrent file creation routine with at most NumCPU() running routines
+	cg := cerrgroup.New(runtime.NumCPU())
 	content := []byte(testContent)
 	for i := int64(0); i < *testFileCount; i++ {
 		cg.Go(func() error {
@@ -87,7 +85,7 @@ func getInodeRatio(checkDir string) (ratio float64) {
 	}
 
 	// Wait for all routines to finish
-	if err = g.Wait(); err != nil {
+	if err = cg.Wait(); err != nil {
 		log.Print(err)
 		return
 	}
