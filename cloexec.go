@@ -31,13 +31,14 @@ import (
 	"unsafe"
 )
 
-// patchSyscallOpen will attempt to monkey patch syscall.Open and avoid using O_CLOEXEC
+// patchSyscallOpen will attempt to monkey patch syscall.Open and avoid using O_CLOEXEC.
 func patchSyscallOpen() {
 	log.Print("Attempting to monkey patch syscall.Open. We might horribly crash here...")
 	monkey.Patch(syscall.Open, syscallOpenNoCloexec)
 	log.Print("Patching syscall.Open done.")
 }
 
+// syscallOpenNoCloexec is a FreeBSD and Isilon kernel syscall.Open() wrapper masking away O_CLOEXEC.
 func syscallOpenNoCloexec(path string, mode int, perm uint32) (fd int, err error) {
 	var _p0 *byte
 	_p0, err = syscall.BytePtrFromString(path)

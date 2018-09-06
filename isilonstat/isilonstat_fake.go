@@ -24,17 +24,18 @@
 // Package isilonstat provides Isilon OneFS 7.1-compatible stat(). This is a
 // fairly naive and incomplete implementation. It might crash and malfunction in
 // most horrible ways.
-
 package isilonstat
 
 import (
 	"os"
 )
 
+// Stat is just a dummy wrapper for os.Stat().
 func Stat(name string) (os.FileInfo, error) {
 	return os.Stat(name)
 }
 
+// Lstat is just a dummy wrapper for os.Lstat().
 func Lstat(name string) (os.FileInfo, error) {
 	return os.Lstat(name)
 }

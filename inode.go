@@ -33,7 +33,7 @@ const testContent = "Death is lighter than a feather, but Duty is heavier than a
 const minRatio = 1
 const maxRatio = 128
 
-// getInodeRatio will do a rough estimation on how much a single file occupies in a directory inode
+// getInodeRatio will do a rough estimation on how much a single file occupies in a directory inode.
 func getInodeRatio(checkDir string) (ratio float64) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -119,7 +119,7 @@ func getInodeRatio(checkDir string) (ratio float64) {
 	return
 }
 
-// getDirSize returns inode size from Fileinfo structure
+// getDirSize returns inode size from Fileinfo structure.
 func getDirSize(name string) (int64, error) {
 	fi, err := os.Stat(name)
 	if err != nil {

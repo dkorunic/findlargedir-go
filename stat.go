@@ -30,14 +30,14 @@ import (
 	"os"
 )
 
-// patchSyscallStat will attempt to monkey patch syscall.Stat with our Isilon version
+// patchSyscallStat will attempt to monkey patch syscall.Stat with our Isilon version.
 func patchSyscallStat() {
 	log.Print("Attempting to monkey patch syscall.Stat. We might horribly crash here...")
 	monkey.Patch(os.Stat, isilonstat.Stat)
 	log.Print("Patching syscall.Stat done.")
 }
 
-// patchSyscallLstat will attempt to monkey patch syscall.Lstat with our Isilon version
+// patchSyscallLstat will attempt to monkey patch syscall.Lstat with our Isilon version.
 func patchSyscallLstat() {
 	log.Print("Attempting to monkey patch syscall.Lstat. We might horribly crash here...")
 	monkey.Patch(os.Lstat, isilonstat.Lstat)

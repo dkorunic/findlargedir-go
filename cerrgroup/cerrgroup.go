@@ -23,7 +23,6 @@
 // cancelation for groups of goroutines working on subtasks of a common task.
 // Additionally package provides configurable concurrency limit.
 // Package has been forked from "x/sync/errgroup" and modified.
-
 package cerrgroup
 
 import (
@@ -48,7 +47,7 @@ type Group struct {
 }
 
 // WithContext returns a new Group and an associated Context derived from ctx.
-func WithContext(bound int, ctx context.Context) (*Group, context.Context) {
+func WithContext(ctx context.Context, bound int) (*Group, context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 	return &Group{guard: make(chan struct{}, bound), cancel: cancel}, ctx
 }

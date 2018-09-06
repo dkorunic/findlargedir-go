@@ -29,7 +29,7 @@ import (
 	"syscall"
 )
 
-// registerStatusSignal will register progress update signals SIGUSR1 and SIGUSR2
+// registerStatusSignal will register progress update signals SIGUSR1 and SIGUSR2.
 func registerStatusSignal(signalChan chan os.Signal) {
 	signal.Notify(signalChan, syscall.SIGUSR1, syscall.SIGUSR2)
 }

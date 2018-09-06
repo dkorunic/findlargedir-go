@@ -23,7 +23,6 @@
 // cancelation for groups of goroutines working on subtasks of a common task.
 // Additionally package provides configurable concurrency limit.
 // Package has been forked from "x/sync/errgroup" and modified.
-
 package cerrgroup_test
 
 import (
@@ -80,7 +79,7 @@ func ExampleGroup_justErrors() {
 
 func ExampleGroup_parallel() {
 	Google := func(ctx context.Context, query string) ([]Result, error) {
-		cg, ctx := cerrgroup.WithContext(runtime.NumCPU(), ctx)
+		cg, ctx := cerrgroup.WithContext(ctx, runtime.NumCPU())
 		searches := []Search{Web, Image, Video}
 		results := make([]Result, len(searches))
 		for i, search := range searches {
@@ -154,7 +153,7 @@ func TestWithContext(t *testing.T) {
 		{errs: []error{errDoom, nil}, want: errDoom},
 	}
 	for _, tc := range cases {
-		cg, ctx := cerrgroup.WithContext(runtime.NumCPU(), context.Background())
+		cg, ctx := cerrgroup.WithContext(context.Background(), runtime.NumCPU())
 		for _, err := range tc.errs {
 			err := err
 			cg.Go(func() error { return err })

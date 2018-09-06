@@ -24,7 +24,6 @@
 // Package isilonstat provides Isilon OneFS 7.1-compatible stat(). This is a
 // fairly naive and incomplete implementation. It might crash and malfunction in
 // most horrible ways.
-
 package isilonstat
 
 import (
@@ -35,6 +34,7 @@ import (
 	"unsafe"
 )
 
+// A IsilonStat_t is stat_t structure from Isilon (modified FreeBSD) kernel.
 type IsilonStat_t struct {
 	Dev           uint32
 	Ino           uint64 // FreeBSD7: uint32
@@ -55,6 +55,7 @@ type IsilonStat_t struct {
 	Birthtimespec syscall.Timespec
 }
 
+// A fileStat is the implementation of FileInfo returned by Stat and Lstat.
 type fileStat struct {
 	name    string
 	size    int64
@@ -70,6 +71,8 @@ func (fs *fileStat) Sys() interface{}   { return &fs.sys }
 func (fs *fileStat) Name() string       { return fs.name }
 func (fs *fileStat) IsDir() bool        { return fs.Mode().IsDir() }
 
+// Stat returns a FileInfo describing the named file.
+// If there is an error, it will be of type *PathError.
 func Stat(name string) (os.FileInfo, error) {
 	var fs fileStat
 	err := syscallIsilonStat(name, &fs.sys)
@@ -80,6 +83,10 @@ func Stat(name string) (os.FileInfo, error) {
 	return &fs, nil
 }
 
+// Lstat returns a FileInfo describing the named file.
+// If the file is a symbolic link, the returned FileInfo
+// describes the symbolic link. Lstat makes no attempt to follow the link.
+// If there is an error, it will be of type *PathError.
 func Lstat(name string) (os.FileInfo, error) {
 	var fs fileStat
 	err := syscallIsilonLstat(name, &fs.sys)
@@ -88,6 +95,35 @@ func Lstat(name string) (os.FileInfo, error) {
 	}
 	fillFileStatFromSys(&fs, name)
 	return &fs, nil
+}
+
+// syscallIsilonStat is an Isilon kernel syscall.Stat() wrapper.
+func syscallIsilonStat(path string, stat *IsilonStat_t) (err error) {
+	var _p0 *byte
+	_p0, err = syscall.BytePtrFromString(path)
+	if err != nil {
+		return
+	}
+	_, _, e1 := syscall.Syscall(syscall.SYS_STAT, uintptr(unsafe.Pointer(_p0)), uintptr(unsafe.Pointer(stat)), 0)
+	if e1 != 0 {
+		return fmt.Errorf("syscall.SYS_STAT: %s", e1)
+	}
+
+	return nil
+}
+
+// syscallIsilonLstat is an Isilon kernel syscall.Lstat() wrapper.
+func syscallIsilonLstat(path string, stat *IsilonStat_t) (err error) {
+	var _p0 *byte
+	_p0, err = syscall.BytePtrFromString(path)
+	if err != nil {
+		return
+	}
+	_, _, e1 := syscall.Syscall(syscall.SYS_LSTAT, uintptr(unsafe.Pointer(_p0)), uintptr(unsafe.Pointer(stat)), 0)
+	if e1 != 0 {
+		return fmt.Errorf("syscall.SYS_LSTAT: %s", e1)
+	}
+	return
 }
 
 func fillFileStatFromSys(fs *fileStat, name string) {
@@ -141,31 +177,4 @@ func basename(name string) string {
 	}
 
 	return name
-}
-
-func syscallIsilonStat(path string, stat *IsilonStat_t) (err error) {
-	var _p0 *byte
-	_p0, err = syscall.BytePtrFromString(path)
-	if err != nil {
-		return
-	}
-	_, _, e1 := syscall.Syscall(syscall.SYS_STAT, uintptr(unsafe.Pointer(_p0)), uintptr(unsafe.Pointer(stat)), 0)
-	if e1 != 0 {
-		return fmt.Errorf("syscall.SYS_STAT: %s", e1)
-	}
-
-	return nil
-}
-
-func syscallIsilonLstat(path string, stat *IsilonStat_t) (err error) {
-	var _p0 *byte
-	_p0, err = syscall.BytePtrFromString(path)
-	if err != nil {
-		return
-	}
-	_, _, e1 := syscall.Syscall(syscall.SYS_LSTAT, uintptr(unsafe.Pointer(_p0)), uintptr(unsafe.Pointer(stat)), 0)
-	if e1 != 0 {
-		return fmt.Errorf("syscall.SYS_LSTAT: %s", e1)
-	}
-	return
 }

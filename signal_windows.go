@@ -28,7 +28,7 @@ import (
 	"os/signal"
 )
 
-// registerStatusSignal will register progress update signals (on Windows mostly unusable)
+// registerStatusSignal will register progress update signals (on Windows mostly unusable).
 func registerStatusSignal(signalChan chan os.Signal) {
 	signal.Notify(signalChan, os.Interrupt)
 }

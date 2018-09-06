@@ -23,12 +23,12 @@
 
 package main
 
-// patchSyscallStat does nothing
+// patchSyscallStat s just a dummy function.
 func patchSyscallStat() {
 	// do nothing
 }
 
-// patchSyscallLstat does nothing
+// patchSyscallLstat s just a dummy function.
 func patchSyscallLstat() {
 	// do nothing
 }

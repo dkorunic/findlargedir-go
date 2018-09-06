@@ -23,7 +23,7 @@
 
 package main
 
-// patchSyscallOpen does nothing
+// patchSyscallOpen is just a dummy function.
 func patchSyscallOpen() {
 	// do nothing
 }
