@@ -18,7 +18,7 @@ Program will **not follow symlinks** and **requires r/w permissions** to be able
 * does not work on FreeBSD 7.x and EMC Isilon 7.1 due to kernel stat structure incompatibilities with a recent FreeBSD kernel structure mapped in Golang syscall *Stat_t
 * accurate mode (`-a`) can cause an excessive I/O and an excessive memory use; only use when appropriate
 * on EMC Isilon OneFS >= 7.1 and < 8.0 it needs isilon mode (`-7` parameter) due to differences in OneFS kernel stat structure
-* on EMC Isilon OneFS 7.0 and older FreeBSD systems (<8.3) without open O_CLOEXEC it won't work at all.
+* ancient Unix systems such as CentOS 5, EMC Isilon OneFS 7.0 and older FreeBSD systems (<8.3) without open O_CLOEXEC support require cloexec mode (`-x` parameter) which attempts to monkey patch syscall.Open()
 
 ## Installation
 
@@ -39,7 +39,7 @@ go get https://github.com/dkorunic/findlargedir
 Usage:
 
 ```shell
-Usage: findlargedir [-7ahp] [-c value] [-t value] [parameters ...]
+Usage: findlargedir [-7ahpx] [-c value] [-t value] [parameters ...]
  -7, --isilon    enable support for EMC Isilon OneFS 7.x
  -a, --accurate  full accuracy when checking large directories
  -c, --testcount=value
@@ -49,13 +49,16 @@ Usage: findlargedir [-7ahp] [-c value] [-t value] [parameters ...]
  -p, --progress  display progress status every 5 minutes
  -t, --threshold=value
                  set file count threshold for alerting (default 50000)
+ -x, --cloexec   disable open O_CLOEXEC for really ancient Unix systems
 ```
 
 When using **accurate mode** (`-a` parameter) beware that large directory lookups will stall the process completely for extended periods of time. 
 
-When unsure of the program progress feel free to send SIGUSR1 or SIGUSR2 process signals to see the last processed path or use **progress** flag (`-p` parameter) do see continous 5-minute status updates.
+When unsure of the program progress feel free to send **SIGUSR1** or **SIGUSR2** process signals (on Windows try with ^C) to see the last processed path or use **progress** flag (`-p` parameter) do see continous 5-minute status updates.
 
 If you are trying to run it on **EMC Isilon OneFS** >= 7.1 and < 8.0 (based on FreeBSD 7.4), make sure to add `-7` parameter otherwise program will detect invalid st_size and skip all filesystems. OneFS 8.0+ releases don't require use of `-7` parameter.
+
+If you have really ancient Unix system and program fails to create temporary files, try using **cloexec mode** with `-x` parameter which will attempt to monkey patch syscall.Open() for that purpose. This will work only on 386 and amd64 platforms.
 
 Typical use case to find possible offenders on several filesystems:
 
