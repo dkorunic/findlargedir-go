@@ -52,9 +52,9 @@ Usage: findlargedir [-7ahpx] [-c value] [-t value] [parameters ...]
  -x, --cloexec   disable open O_CLOEXEC for really ancient Unix systems
 ```
 
-When using **accurate mode** (`-a` parameter) beware that large directory lookups will stall the process completely for extended periods of time. 
+When using **accurate mode** (`-a` parameter) beware that large directory lookups will stall the process completely for extended periods of time. What this mode does is basically a secondary fully accurate pass on a possibly offending directory calculating exact number of entries.
 
-When unsure of the program progress feel free to send **SIGUSR1** or **SIGUSR2** process signals (on Windows try with ^C) to see the last processed path or use **progress** flag (`-p` parameter) do see continous 5-minute status updates.
+When unsure of the program progress feel free to send **SIGUSR1** or **SIGUSR2** process signals (on Windows try with ^C) to see the last processed path or use **progress** flag (`-p` parameter) to see continous 5-minute status updates.
 
 If you are trying to run it on EMC Isilon OneFS >= 7.1 and < 8.0 (based on FreeBSD 7.4), make sure to add **isilon mode** with `-7` parameter otherwise program will detect invalid st_size and skip all filesystems. OneFS 8.0+ releases don't require use of `-7` parameter. This will work only on 386 and amd64 platforms.
 
