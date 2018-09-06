@@ -3,6 +3,7 @@ findlargedir
 
 [![GitHub license](https://img.shields.io/github/license/dkorunic/findlargedir.svg)](https://github.com/dkorunic/findlargedir/blob/master/LICENSE.txt)
 [![GitHub release](https://img.shields.io/github/release/dkorunic/findlargedir.svg)](https://github.com/dkorunic/findlargedir/releases/latest)
+[![Build Status](https://travis-ci.org/dkorunic/findlargedir.svg)](https://travis-ci.org/dkorunic/findlargedir)
 [![Go Report Card](https://goreportcard.com/badge/github.com/dkorunic/findlargedir)](https://goreportcard.com/report/github.com/dkorunic/findlargedir)
 
 ## About
@@ -17,6 +18,7 @@ Program will **not follow symlinks** and **requires r/w permissions** to be able
 * does not work on FreeBSD 7.x and EMC Isilon 7.1 due to kernel stat structure incompatibilities with a recent FreeBSD kernel structure mapped in Golang syscall *Stat_t
 * accurate mode (`-a`) can cause an excessive I/O and an excessive memory use; only use when appropriate
 * on EMC Isilon OneFS >= 7.1 and < 8.0 it needs isilon mode (`-7` parameter) due to differences in OneFS kernel stat structure
+* on EMC Isilon OneFS 7.0 and older FreeBSD systems (<8.3) without open O_CLOEXEC it won't work at all.
 
 ## Installation
 
@@ -53,7 +55,7 @@ When using **accurate mode** (`-a` parameter) beware that large directory lookup
 
 When unsure of the program progress feel free to send SIGUSR1 or SIGUSR2 process signals to see the last processed path or use **progress** flag (`-p` parameter) do see continous 5-minute status updates.
 
-If you are trying to run it on **EMC Isilon OneFS** >= 7.1 and < 8.0 (based on FreeBSD 7.4), make sure to add `-7` parameter otherwise program will detect invalid st_size and skip all filesystems.
+If you are trying to run it on **EMC Isilon OneFS** >= 7.1 and < 8.0 (based on FreeBSD 7.4), make sure to add `-7` parameter otherwise program will detect invalid st_size and skip all filesystems. OneFS 8.0+ releases don't require use of `-7` parameter.
 
 Typical use case to find possible offenders on several filesystems:
 

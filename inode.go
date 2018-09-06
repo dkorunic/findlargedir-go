@@ -22,13 +22,12 @@
 package main
 
 import (
+	"github.com/dkorunic/findlargedir/cerrgroup"
+	"github.com/dkorunic/findlargedir/isilonstat"
 	"io/ioutil"
 	"log"
 	"os"
 	"runtime"
-
-	"github.com/dkorunic/findlargedir/cerrgroup"
-	"github.com/dkorunic/findlargedir/isilonstat"
 )
 
 const testContent = "Death is lighter than a feather, but Duty is heavier than a mountain."
@@ -60,6 +59,11 @@ func getInodeRatio(checkDir string) (ratio float64) {
 	if err != nil {
 		log.Print(err)
 		return
+	}
+
+	// If Unix system doesn't support open O_CLOEXEC, try monkey patching syscall.Open
+	if *cloexecFlag {
+		patchSyscallOpen()
 	}
 
 	// Highly concurrent file creation routine with at most NumCPU() running routines

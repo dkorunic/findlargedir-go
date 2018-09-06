@@ -133,15 +133,15 @@ func basename(name string) string {
 	return name
 }
 
-func syscallIsilonStat(name string, buf *IsilonStat_t) (err error) {
+func syscallIsilonStat(path string, stat *IsilonStat_t) (err error) {
 	var _p0 *byte
-	_p0, err = syscall.BytePtrFromString(name)
+	_p0, err = syscall.BytePtrFromString(path)
 	if err != nil {
 		return
 	}
-	_, _, e := syscall.Syscall(syscall.SYS_STAT, uintptr(unsafe.Pointer(_p0)), uintptr(unsafe.Pointer(buf)), 0)
-	if e != 0 {
-		return fmt.Errorf("syscall.SYS_STAT: %s", e)
+	_, _, e1 := syscall.Syscall(syscall.SYS_STAT, uintptr(unsafe.Pointer(_p0)), uintptr(unsafe.Pointer(stat)), 0)
+	if e1 != 0 {
+		return fmt.Errorf("syscall.SYS_STAT: %s", e1)
 	}
 
 	return nil
