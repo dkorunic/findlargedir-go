@@ -64,6 +64,18 @@ func main() {
 	log.Printf("Note: program will attempt to identify directories larger than %v entries. Make sure you have r/w privileges.",
 		*alertThreshold)
 
+	// If Unix system doesn't support open O_CLOEXEC, try monkey patching syscall.Open
+	// This will work only on FreeBSD and derivatives
+	if *cloexecFlag {
+		patchSyscallOpen()
+	}
+
+	// If using EMC Isilon 7.x compatibility, try monkey patching syscall.Stat and syscall.Lstat
+	if *isilonFlag {
+		patchSyscallStat()
+		patchSyscallLstat()
+	}
+
 	for i := range args {
 		processDirectory(args[i])
 	}
@@ -93,12 +105,14 @@ func processDirectory(processPath string) {
 		go func() {
 			defer wg.Done()
 
-			select {
-			case <-ticker.C:
-				printPath(lastPathname)
-			case <-doneTickerChan:
-				ticker.Stop()
-				return
+			for {
+				select {
+				case <-ticker.C:
+					printPath(lastPathname)
+				case <-doneTickerChan:
+					ticker.Stop()
+					return
+				}
 			}
 		}()
 	}

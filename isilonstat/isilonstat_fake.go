@@ -34,3 +34,7 @@ import (
 func Stat(name string) (os.FileInfo, error) {
 	return os.Stat(name)
 }
+
+func Lstat(name string) (os.FileInfo, error) {
+	return os.Lstat(name)
+}

@@ -19,11 +19,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// +build !freebsd !amd64
+// +build freebsd,amd64
 
 package main
 
-// patchSyscallOpen does nothing
-func patchSyscallOpen() {
-	// do nothing
+import (
+	"github.com/dkorunic/findlargedir/isilonstat"
+	"github.com/dkorunic/findlargedir/monkey"
+	"log"
+	"os"
+)
+
+// patchSyscallStat will attempt to monkey patch syscall.Stat with our Isilon version
+func patchSyscallStat() {
+	log.Print("Attempting to monkey patch syscall.Stat. We might horribly crash here...")
+	monkey.Patch(os.Stat, isilonstat.Stat)
+	log.Print("Patching syscall.Stat done.")
+}
+
+// patchSyscallLstat will attempt to monkey patch syscall.Lstat with our Isilon version
+func patchSyscallLstat() {
+	log.Print("Attempting to monkey patch syscall.Lstat. We might horribly crash here...")
+	monkey.Patch(os.Lstat, isilonstat.Lstat)
+	log.Print("Patching syscall.Lstat done.")
 }

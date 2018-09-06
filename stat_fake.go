@@ -23,7 +23,12 @@
 
 package main
 
-// patchSyscallOpen does nothing
-func patchSyscallOpen() {
+// patchSyscallStat does nothing
+func patchSyscallStat() {
+	// do nothing
+}
+
+// patchSyscallLstat does nothing
+func patchSyscallLstat() {
 	// do nothing
 }

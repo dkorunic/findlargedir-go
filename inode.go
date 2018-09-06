@@ -23,7 +23,6 @@ package main
 
 import (
 	"github.com/dkorunic/findlargedir/cerrgroup"
-	"github.com/dkorunic/findlargedir/isilonstat"
 	"io/ioutil"
 	"log"
 	"os"
@@ -59,11 +58,6 @@ func getInodeRatio(checkDir string) (ratio float64) {
 	if err != nil {
 		log.Print(err)
 		return
-	}
-
-	// If Unix system doesn't support open O_CLOEXEC, try monkey patching syscall.Open
-	if *cloexecFlag {
-		patchSyscallOpen()
 	}
 
 	// Highly concurrent file creation routine with at most NumCPU() running routines
@@ -127,11 +121,9 @@ func getInodeRatio(checkDir string) (ratio float64) {
 
 // getDirSize returns inode size from Fileinfo structure
 func getDirSize(name string) (int64, error) {
-	if *isilonFlag {
-		fi, err := isilonstat.Stat(name)
-		return fi.Size(), err
-	}
-
 	fi, err := os.Stat(name)
+	if err != nil {
+		return 0, err
+	}
 	return fi.Size(), err
 }

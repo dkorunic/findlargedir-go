@@ -80,6 +80,16 @@ func Stat(name string) (os.FileInfo, error) {
 	return &fs, nil
 }
 
+func Lstat(name string) (os.FileInfo, error) {
+	var fs fileStat
+	err := syscallIsilonLstat(name, &fs.sys)
+	if err != nil {
+		return nil, &os.PathError{"isilonlstat", name, err}
+	}
+	fillFileStatFromSys(&fs, name)
+	return &fs, nil
+}
+
 func fillFileStatFromSys(fs *fileStat, name string) {
 	fs.name = basename(name)
 	fs.size = fs.sys.Size
@@ -145,4 +155,17 @@ func syscallIsilonStat(path string, stat *IsilonStat_t) (err error) {
 	}
 
 	return nil
+}
+
+func syscallIsilonLstat(path string, stat *IsilonStat_t) (err error) {
+	var _p0 *byte
+	_p0, err = syscall.BytePtrFromString(path)
+	if err != nil {
+		return
+	}
+	_, _, e1 := syscall.Syscall(syscall.SYS_LSTAT, uintptr(unsafe.Pointer(_p0)), uintptr(unsafe.Pointer(stat)), 0)
+	if e1 != 0 {
+		return fmt.Errorf("syscall.SYS_LSTAT: %s", e1)
+	}
+	return
 }

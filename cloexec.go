@@ -19,7 +19,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// +build !windows,386 !windows,amd64
+// +build freebsd,amd64
 
 package main
 
@@ -34,23 +34,26 @@ import (
 // patchSyscallOpen will attempt to monkey patch syscall.Open and avoid using O_CLOEXEC
 func patchSyscallOpen() {
 	log.Print("Attempting to monkey patch syscall.Open. We might horribly crash here...")
-	monkey.Patch(syscall.Open, func(path string, mode int, perm uint32) (fd int, err error) {
-		var _p0 *byte
-		_p0, err = syscall.BytePtrFromString(path)
-		if err != nil {
-			return
-		}
+	monkey.Patch(syscall.Open, syscallOpenNoCloexec)
+	log.Print("Patching syscall.Open done.")
+}
 
-		// Strip syscall.O_CLOEXEC
-		if mode&syscall.O_CLOEXEC != 0 {
-			mode &^= syscall.O_CLOEXEC
-		}
-
-		r0, _, e1 := syscall.Syscall(syscall.SYS_OPEN, uintptr(unsafe.Pointer(_p0)), uintptr(mode), uintptr(perm))
-		fd = int(r0)
-		if e1 != 0 {
-			err = fmt.Errorf("syscall.SYS_OPEN: %s", e1)
-		}
+func syscallOpenNoCloexec(path string, mode int, perm uint32) (fd int, err error) {
+	var _p0 *byte
+	_p0, err = syscall.BytePtrFromString(path)
+	if err != nil {
 		return
-	})
+	}
+
+	// Strip syscall.O_CLOEXEC
+	if mode&syscall.O_CLOEXEC != 0 {
+		mode &^= syscall.O_CLOEXEC
+	}
+
+	r0, _, e1 := syscall.Syscall(syscall.SYS_OPEN, uintptr(unsafe.Pointer(_p0)), uintptr(mode), uintptr(perm))
+	fd = int(r0)
+	if e1 != 0 {
+		err = fmt.Errorf("syscall.SYS_OPEN: %s", e1)
+	}
+	return
 }
