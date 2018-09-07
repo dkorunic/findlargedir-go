@@ -4,6 +4,7 @@ findlargedir
 [![GitHub license](https://img.shields.io/github/license/dkorunic/findlargedir.svg)](https://github.com/dkorunic/findlargedir/blob/master/LICENSE.txt)
 [![GitHub release](https://img.shields.io/github/release/dkorunic/findlargedir.svg)](https://github.com/dkorunic/findlargedir/releases/latest)
 [![Build Status](https://travis-ci.org/dkorunic/findlargedir.svg)](https://travis-ci.org/dkorunic/findlargedir)
+[![codebeat badge](https://codebeat.co/badges/fe5a10d1-8727-4da7-ae99-c0f4a91b99b5)](https://codebeat.co/projects/github-com-dkorunic-findlargedir-master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/dkorunic/findlargedir)](https://goreportcard.com/report/github.com/dkorunic/findlargedir)
 
 ## About
