@@ -29,7 +29,13 @@ import (
 	"syscall"
 )
 
-// registerStatusSignal will register progress update signals SIGUSR1 and SIGUSR2.
-func registerStatusSignal(signalChan chan os.Signal) {
+// registerStatusSignal registers progress update signals SIGUSR1/SIGUSR2 and SIGINT/SIGTERM for pre-exit printout.
+func registerStatusSignal(signalChan chan os.Signal, signalTermChan chan os.Signal) {
 	signal.Notify(signalChan, syscall.SIGUSR1, syscall.SIGUSR2)
+	signal.Notify(signalTermChan, os.Interrupt, syscall.SIGTERM)
+}
+
+// registerTempdirSignal registers SIGINT/SIGTERM signals for tempDir cleanup.
+func registerTempdirSignal(signalChan chan os.Signal) {
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 }

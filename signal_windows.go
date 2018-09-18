@@ -28,7 +28,12 @@ import (
 	"os/signal"
 )
 
-// registerStatusSignal will register progress update signals (on Windows mostly unusable).
-func registerStatusSignal(signalChan chan os.Signal) {
+// registerStatusSignal registers ^C for pre-exit printout.
+func registerStatusSignal(signalChan chan os.Signal, signalTermChan chan os.Signal) {
+	signal.Notify(signalTermChan, os.Interrupt)
+}
+
+// registerTempdirSignal registers ^C for tempDir cleanup.
+func registerTempdirSignal(signalChan chan os.Signal) {
 	signal.Notify(signalChan, os.Interrupt)
 }

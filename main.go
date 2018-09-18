@@ -36,6 +36,7 @@ const testDirName = "findlargedir"
 const defaultAlertThreshold = 50000
 const defaultTestFileCount = 20000
 const defaultProgressTicker = time.Minute * 5
+const defaultPathnameQueueSize = 1024
 
 var alertThreshold, testFileCount *int64
 var helpFlag, accurateFlag, progressFlag, isilonFlag, cloexecFlag *bool
@@ -81,9 +82,9 @@ func main() {
 	}
 }
 
-// processDirectory will process individual root filesystem/folder path and identify blackhole directory offenders
+// processDirectory will process individual root filesystem/folder path and identify blackhole directory offenders.
 func processDirectory(processPath string) {
-	// Establish file to direcory inode ratio
+	// Establish file to directory inode ratio
 	ratio := getInodeRatio(processPath)
 	if ratio <= 0 {
 		log.Printf("Unable to calculate inode to file count ratio on %q. Skipping.", processPath)
@@ -91,9 +92,39 @@ func processDirectory(processPath string) {
 	}
 
 	var wg sync.WaitGroup
-
-	var ticker *time.Ticker
 	var lastPathname *string
+
+	// Signal handler variables
+	signalChan := make(chan os.Signal, 1)
+	signalTermChan := make(chan os.Signal, 1)
+	doneSignalChan := make(chan struct{}, 1)
+	defer close(doneSignalChan)
+
+	// Signal handler goroutine: handle SIGUSR1, SIGUSR2 and SIGTERM
+	registerStatusSignal(signalChan, signalTermChan)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		for {
+			select {
+			case <-signalChan:
+				// SIGUSR1, SIGUSR2: display progress update and resume
+				printPath(lastPathname)
+			case <-signalTermChan:
+				// SIGTERM: display progress update and exit with error
+				printPath(lastPathname)
+				log.Printf("Exiting program as requested.")
+				os.Exit(1)
+			case <-doneSignalChan:
+				return
+			}
+		}
+	}()
+
+	// Ticker goroutine variables
+	var ticker *time.Ticker
+
 	doneTickerChan := make(chan struct{}, 1)
 	defer close(doneTickerChan)
 
@@ -117,25 +148,26 @@ func processDirectory(processPath string) {
 		}()
 	}
 
-	signalChan := make(chan os.Signal, 1)
-	doneSignalChan := make(chan struct{}, 1)
-	defer close(doneSignalChan)
+	// Deep-dive directory counting goroutine variables
+	accurateChan := make(chan string, defaultPathnameQueueSize)
 
-	// Default SIGUSR1 and SIGUSR2 handler which will display progress update
-	registerStatusSignal(signalChan)
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	// Async large-directory accurate counting
+	if *accurateFlag {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
 
-		for {
-			select {
-			case <-signalChan:
-				printPath(lastPathname)
-			case <-doneSignalChan:
-				return
+			for v := range accurateChan {
+				deChildren, err := godirwalk.ReadDirents(v, nil)
+				if err != nil {
+					log.Print(err)
+					continue
+				}
+
+				log.Printf("Correct enumeration: directory %q has exactly %v entries.", v, len(deChildren))
 			}
-		}
-	}()
+		}()
+	}
 
 	var offenderTotal, countFromStat int64
 
@@ -161,17 +193,7 @@ func processDirectory(processPath string) {
 
 					// If necessary deep-dive the directory and get accurate file count
 					if *accurateFlag {
-						log.Printf("Calculating %q directory exact entry count. Please wait...",
-							osPathname)
-
-						deChildren, err := godirwalk.ReadDirents(osPathname, nil)
-						if err != nil {
-							log.Print(err)
-							return err
-						}
-
-						log.Printf("Done. Directory %q has exactly %v entries.", osPathname,
-							len(deChildren))
+						accurateChan <- osPathname
 					}
 					return fmt.Errorf("directory %q is too large to process", osPathname)
 				}
@@ -189,12 +211,13 @@ func processDirectory(processPath string) {
 		doneTickerChan <- struct{}{}
 	}
 	doneSignalChan <- struct{}{}
+	close(accurateChan)
 	wg.Wait()
 
 	log.Printf("Found %v large directories in %q.", offenderTotal, processPath)
 }
 
-// humanPrint will display base10 approximate file count
+// humanPrint will display base10 approximate file count.
 func humanPrint(input int64) string {
 	exp := math.Round(math.Log(float64(input)) / math.Log(float64(10)))
 
@@ -220,7 +243,7 @@ func humanPrint(input int64) string {
 	return "<1k"
 }
 
-// printPath will display path processing progress
+// printPath will display path processing progress.
 func printPath(processPath *string) {
 	if processPath != nil && *processPath != "" {
 		log.Printf("Last processed path was: %q.", *processPath)

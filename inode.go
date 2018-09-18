@@ -27,6 +27,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"sync"
 )
 
 const testContent = "Death is lighter than a feather, but Duty is heavier than a mountain."
@@ -45,6 +46,8 @@ func getInodeRatio(checkDir string) (ratio float64) {
 	log.Printf("Determining inode to file count ratio on %q. Please wait, creating %v files...", checkDir,
 		*testFileCount)
 
+	var wg sync.WaitGroup
+
 	// Create a temporary directory in each root filesystem path and remove on exit
 	tempDir, err := ioutil.TempDir(checkDir, testDirName)
 	if err != nil {
@@ -52,6 +55,29 @@ func getInodeRatio(checkDir string) (ratio float64) {
 		return
 	}
 	defer os.RemoveAll(tempDir)
+
+	// Signal handler variables
+	signalChan := make(chan os.Signal, 1)
+	doneSignalChan := make(chan struct{}, 1)
+
+	// Signal handler goroutine: handle SIGINT and SIGTERM while creating temp files
+	registerTempdirSignal(signalChan)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		for {
+			select {
+			case <-signalChan:
+				log.Printf("Cleaning up temporary directory %v, please wait...", tempDir)
+				os.RemoveAll(tempDir)
+				log.Printf("Exiting program as requested.")
+				os.Exit(1)
+			case <-doneSignalChan:
+				return
+			}
+		}
+	}()
 
 	// Get empty directory inode size
 	dirSizeEmpty, err := getDirSize(tempDir)
@@ -114,6 +140,10 @@ func getInodeRatio(checkDir string) (ratio float64) {
 		ratio = 0
 		return
 	}
+
+	// Close channels and cleanup routines
+	doneSignalChan <- struct{}{}
+	wg.Wait()
 
 	log.Printf("Done. Approximate directory inode size to file count ratio on %q is %v.", checkDir, ratio)
 	return
