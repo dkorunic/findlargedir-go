@@ -3,15 +3,6 @@ sudo: false
 matrix:
   include:
     - go: 1.x
-      env: LATEST=true
-    - go: 1.7.x
-    - go: 1.8.x
-    - go: 1.9.x
-    - go: 1.10.x
-    - go: 1.11.x
-    - go: tip
-  allow_failures:
-    - go: tip
 
 before_install:
     - go get github.com/mitchellh/gox
@@ -25,8 +16,7 @@ script:
     - diff -u <(echo -n) <(gofmt -d .)
     - go vet $(go list ./... | grep -v /vendor/)
     - go test -v -race ./...
-    # Only build binaries from the latest Go release.
-    - if [ "${LATEST}" = "true" ]; then gox -os="linux darwin windows freebsd" -arch="386 amd64 arm arm64" -verbose ./...; fi
+    - gox -osarch="linux/arm linux/arm64 linux/386 linux/amd64 darwin/386 darwin/amd64 freebsd/arm freebsd/386 freebsd/amd64 windows/386 windows/amd64" -verbose ./...
 
 notifications:
     email: false
