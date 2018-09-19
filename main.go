@@ -28,6 +28,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -39,7 +40,7 @@ const defaultProgressTicker = time.Minute * 5
 const defaultPathnameQueueSize = 1024
 
 var alertThreshold, testFileCount *int64
-var helpFlag, accurateFlag, progressFlag, isilonFlag, cloexecFlag *bool
+var helpFlag, accurateFlag, progressFlag, isilonFlag, cloexecFlag, oneFilesystemFlag *bool
 
 func init() {
 	alertThreshold = getopt.Int64Long("threshold", 't', defaultAlertThreshold,
@@ -51,6 +52,7 @@ func init() {
 	progressFlag = getopt.BoolLong("progress", 'p', "display progress status every 5 minutes")
 	isilonFlag = getopt.BoolLong("isilon", '7', "enable support for EMC Isilon OneFS 7.x")
 	cloexecFlag = getopt.BoolLong("cloexec", 'x', "disable open O_CLOEXEC for really ancient Unix systems")
+	oneFilesystemFlag = getopt.BoolLong("onefilesystem", 'o', "never cross filesystem boundaries")
 }
 
 func main() {
@@ -78,19 +80,27 @@ func main() {
 	}
 
 	for i := range args {
-		processDirectory(args[i])
+		processDirectory(filepath.Clean(args[i]))
 	}
 }
 
 // processDirectory will process individual root filesystem/folder path and identify blackhole directory offenders.
-func processDirectory(processPath string) {
+func processDirectory(rootPath string) {
 	// Establish file to directory inode ratio
-	ratio := getInodeRatio(processPath)
+	ratio := getInodeRatio(rootPath)
 	if ratio <= 0 {
-		log.Printf("Unable to calculate inode to file count ratio on %q. Skipping.", processPath)
+		log.Printf("Unable to calculate inode to file count ratio on %q. Skipping.", rootPath)
 		return
 	}
 
+	// Save root stat info for later use
+	rootStat, err := os.Lstat(rootPath)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+
+	// Common Goroutine variables
 	var wg sync.WaitGroup
 	var lastPathname *string
 
@@ -124,7 +134,6 @@ func processDirectory(processPath string) {
 
 	// Ticker goroutine variables
 	var ticker *time.Ticker
-
 	doneTickerChan := make(chan struct{}, 1)
 	defer close(doneTickerChan)
 
@@ -172,19 +181,26 @@ func processDirectory(processPath string) {
 	var offenderTotal, countFromStat int64
 
 	// Fast concurrent directory walker: won't follow symlinks and won't sort entries
-	godirwalk.Walk(processPath, &godirwalk.Options{
+	godirwalk.Walk(rootPath, &godirwalk.Options{
 		Unsorted:            true,
 		FollowSymbolicLinks: false,
 		// Default callback will process only directory entries
 		Callback: func(osPathname string, de *godirwalk.Dirent) error {
+			// Process only if entry is directory
 			if de.IsDir() {
-				// Process only if entry is directory
 				lastPathname = &osPathname
 				fi, err := os.Stat(osPathname)
 				if err != nil {
 					return err
 				}
 
+				// Check if we are crossing filesystem boundaries
+				if *oneFilesystemFlag && !isSameFilesystem(rootStat, fi) {
+					log.Printf("Directory %q is a mount point, skipping further checks.", osPathname)
+					return fmt.Errorf("directory %q is a mount point", osPathname)
+				}
+
+				// Continue with approximate checking
 				countFromStat = int64(float64(fi.Size()) / ratio)
 				if countFromStat >= int64(*alertThreshold) {
 					log.Printf("Directory %q is possibly a large directory with %v entries.", osPathname,
@@ -214,7 +230,7 @@ func processDirectory(processPath string) {
 	close(accurateChan)
 	wg.Wait()
 
-	log.Printf("Found %v large directories in %q.", offenderTotal, processPath)
+	log.Printf("Found %v large directories in %q.", offenderTotal, rootPath)
 }
 
 // humanPrint will display base10 approximate file count.

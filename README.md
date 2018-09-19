@@ -40,13 +40,15 @@ go get https://github.com/dkorunic/findlargedir
 Usage:
 
 ```shell
-Usage: findlargedir [-7ahpx] [-c value] [-t value] [parameters ...]
+Usage: findlargedir [-7ahopx] [-c value] [-t value] [parameters ...]
  -7, --isilon    enable support for EMC Isilon OneFS 7.x
  -a, --accurate  full accuracy when checking large directories
  -c, --testcount=value
                  set initial file count for inode size testing phase (default
                  20000)
  -h, --help      display help
+ -o, --onefilesystem
+                 never cross filesystem boundaries
  -p, --progress  display progress status every 5 minutes
  -t, --threshold=value
                  set file count threshold for alerting (default 50000)
@@ -60,6 +62,8 @@ When unsure of the program progress feel free to send **SIGUSR1** or **SIGUSR2**
 If you are trying to run it on EMC Isilon OneFS >= 7.1 and < 8.0 (based on FreeBSD 7.4), make sure to add **isilon mode** with `-7` parameter otherwise program will detect invalid st_size and skip all filesystems. OneFS 8.0+ releases don't require use of `-7` parameter. This will work only on 386 and amd64 platforms.
 
 If you have really ancient FreeBSD system (<8.3) or a derivative such as EMC Isilon OneFS (<7.2) and program fails to create temporary files, try using **cloexec mode** with `-x` parameter. This will work only on 386 and amd64 platforms.
+
+If you want to avoid descending into mounted filesystems (as in find -xdev option), use **onefilesystem mode** with `-o` parameter. This will not work on Windows however.
 
 Typical use case to find possible offenders on several filesystems:
 
