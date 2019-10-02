@@ -30,9 +30,5 @@ import (
 
 // isSameFilesystem compares if two entries have the same root device number st_dev.
 func isSameFilesystem(rootStat, osStat os.FileInfo) bool {
-	if rootStat.Sys().(*syscall.Stat_t).Dev == osStat.Sys().(*syscall.Stat_t).Dev {
-		return true
-	}
-
-	return false
+	return rootStat.Sys().(*syscall.Stat_t).Dev == osStat.Sys().(*syscall.Stat_t).Dev
 }

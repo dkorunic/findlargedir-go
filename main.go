@@ -181,7 +181,7 @@ func processDirectory(rootPath string) {
 	var offenderTotal, countFromStat int64
 
 	// Fast concurrent directory walker: won't follow symlinks and won't sort entries
-	godirwalk.Walk(rootPath, &godirwalk.Options{
+	_ = godirwalk.Walk(rootPath, &godirwalk.Options{
 		Unsorted:            true,
 		FollowSymbolicLinks: false,
 		// Default callback will process only directory entries
