@@ -12,13 +12,12 @@ builds:
     - arm
     - arm64
 archives:
-  replacements:
-    linux: Linux
-    darwin: Darwin
-    windows: Windows
-    freebsd: FreeBSD
-    386: i386
-    amd64: x86_64
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
 checksum:
   name_template: 'checksums.txt'
 snapshot:
