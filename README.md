@@ -1,38 +1,37 @@
-findlargedir
-===
+# findlargedir-go
 
-[![GitHub license](https://img.shields.io/github/license/dkorunic/findlargedir.svg)](https://github.com/dkorunic/findlargedir/blob/master/LICENSE.txt)
-[![GitHub release](https://img.shields.io/github/release/dkorunic/findlargedir.svg)](https://github.com/dkorunic/findlargedir/releases/latest)
-[![Build Status](https://travis-ci.org/dkorunic/findlargedir.svg)](https://travis-ci.org/dkorunic/findlargedir)
-[![codebeat badge](https://codebeat.co/badges/fe5a10d1-8727-4da7-ae99-c0f4a91b99b5)](https://codebeat.co/projects/github-com-dkorunic-findlargedir-master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/dkorunic/findlargedir)](https://goreportcard.com/report/github.com/dkorunic/findlargedir)
+[![GitHub license](https://img.shields.io/github/license/dkorunic/findlargedir-go-go.svg)](https://github.com/dkorunic/findlargedir-go-go/blob/master/LICENSE.txt)
+[![GitHub release](https://img.shields.io/github/release/dkorunic/findlargedir-go-go.svg)](https://github.com/dkorunic/findlargedir-go-go/releases/latest)
+[![Build Status](https://travis-ci.org/dkorunic/findlargedir-go.svg)](https://travis-ci.org/dkorunic/findlargedir-go)
+[![codebeat badge](https://codebeat.co/badges/fe5a10d1-8727-4da7-ae99-c0f4a91b99b5)](https://codebeat.co/projects/github-com-dkorunic-findlargedir-go-master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/dkorunic/findlargedir-go)](https://goreportcard.com/report/github.com/dkorunic/findlargedir-go)
+findlargedir-go is a quick hack intended to help identifying "black hole" directories on an any filesystem having more than 100,000 entries in a single flat structure. Program will attempt to identify any number of such events and report on them.
 
 ## About
 
-Findlargedir is a quick hack intended to help identifying "black hole" directories on an any filesystem having more than 100,000 entries in a single flat structure. Program will attempt to identify any number of such events and report on them.
+findlargedir-go is a quick hack intended to help identifying "black hole" directories on an any filesystem having more than 100,000 entries in a single flat structure. Program will attempt to identify any number of such events and report on them.
 
 Program will **not follow symlinks** and **requires r/w permissions** to be able to calculate a directory inode size to number of entries ratio and estimate a number of entries in a directory without actually counting them. While this method is just an approximation of the actual number of entries in a directory, it is good enough to quickly scan for offending directories.
 
 ## Caveats
 
-* requires r/w privileges for an each filesystem being tested, it will also create a temporary directory with a lot of temporary files which are cleaned up afterwards
-* does not work on FreeBSD 7.x and EMC Isilon 7.1 due to kernel stat structure incompatibilities with a recent FreeBSD kernel structure mapped in Golang syscall *Stat_t
-* accurate mode (`-a`) can cause an excessive I/O and an excessive memory use; only use when appropriate
-* on EMC Isilon OneFS >= 7.1 and < 8.0 it needs isilon mode (`-7` parameter) due to differences in OneFS kernel stat structure
-* older FreeBSD systems (<8.3) and derivatives such as EMC Isilon OneFS < 7.2 without open O_CLOEXEC support require cloexec mode (`-x` parameter)
+- requires r/w privileges for an each filesystem being tested, it will also create a temporary directory with a lot of temporary files which are cleaned up afterwards
+- does not work on FreeBSD 7.x and EMC Isilon 7.1 due to kernel stat structure incompatibilities with a recent FreeBSD kernel structure mapped in Golang syscall \*Stat_t
+- accurate mode (`-a`) can cause an excessive I/O and an excessive memory use; only use when appropriate
+- on EMC Isilon OneFS >= 7.1 and < 8.0 it needs isilon mode (`-7` parameter) due to differences in OneFS kernel stat structure
+- older FreeBSD systems (<8.3) and derivatives such as EMC Isilon OneFS < 7.2 without open O_CLOEXEC support require cloexec mode (`-x` parameter)
+  There are two ways of installing findlargedir-go:
 
 ## Installation
 
-There are two ways of installing findlargedir:
+There are two ways of installing findlargedir-go:
+Download your preferred flavor from [the releases](https://github.com/dkorunic/findlargedir-go/releases/latest) page and install manually.
 
-### Manual
-
-Download your preferred flavor from [the releases](https://github.com/dkorunic/findlargedir/releases/latest) page and install manually.
 
 ### Using go get
 
 ```shell
-go get https://github.com/dkorunic/findlargedir
+go get https://github.com/dkorunic/findlargedir-go
 ```
 
 ## Usage
