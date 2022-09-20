@@ -1,11 +1,7 @@
 # findlargedir-go
 
-[![GitHub license](https://img.shields.io/github/license/dkorunic/findlargedir-go-go.svg)](https://github.com/dkorunic/findlargedir-go-go/blob/master/LICENSE.txt)
-[![GitHub release](https://img.shields.io/github/release/dkorunic/findlargedir-go-go.svg)](https://github.com/dkorunic/findlargedir-go-go/releases/latest)
-[![Build Status](https://travis-ci.org/dkorunic/findlargedir-go.svg)](https://travis-ci.org/dkorunic/findlargedir-go)
-[![codebeat badge](https://codebeat.co/badges/fe5a10d1-8727-4da7-ae99-c0f4a91b99b5)](https://codebeat.co/projects/github-com-dkorunic-findlargedir-go-master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/dkorunic/findlargedir-go)](https://goreportcard.com/report/github.com/dkorunic/findlargedir-go)
-findlargedir-go is a quick hack intended to help identifying "black hole" directories on an any filesystem having more than 100,000 entries in a single flat structure. Program will attempt to identify any number of such events and report on them.
+[![GitHub license](https://img.shields.io/github/license/dkorunic/findlargedir-go.svg)](https://github.com/dkorunic/findlargedir-go/blob/master/LICENSE.txt)
+[![GitHub release](https://img.shields.io/github/release/dkorunic/findlargedir-go.svg)](https://github.com/dkorunic/findlargedir-go/releases/latest)
 
 ## About
 
@@ -26,7 +22,6 @@ Program will **not follow symlinks** and **requires r/w permissions** to be able
 
 There are two ways of installing findlargedir-go:
 Download your preferred flavor from [the releases](https://github.com/dkorunic/findlargedir-go/releases/latest) page and install manually.
-
 
 ### Using go get
 
